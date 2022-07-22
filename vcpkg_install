@@ -1,0 +1,13 @@
+#!/bin/sh
+export ANDROID_SDK_ROOT=$HOME/.android/Sdk
+#export ANDROID_NDK_HOME=$ANDROID_NDK_HOME/ndk/23.2.8568313
+#export ANDROID_NDK_HOME=$ANDROID_NDK_HOME/ndk/24.0.8215888
+export ANDROID_NDK_HOME=$ANDROID_NDK_HOME/ndk/25.0.8775105
+export PATH=/usr/local/bin:/usr/bin:/bin:$HOME/.pyenv/shims:$HOME/vcpkg
+
+VCPKG_OVERLAY_ROOT=$HOME/vcpkg-overlays
+export VCPKG_OVERLAY_TRIPLETS=$VCPKG_OVERLAY_ROOT/triplets
+export VCPKG_OVERLAY_PORTS=$VCPKG_OVERLAY_ROOT/ports/python3
+
+# Install
+vcpkg install libuuid:x86-linux libuuid:{arm,arm64,x86,x64}-android

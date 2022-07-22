@@ -349,6 +349,14 @@ function(vcpkg_configure_make)
         set(z_vcpkg_prefix_path "${CURRENT_INSTALLED_DIR}")
     endif()
 
+    # Android - cross-compiling support
+    if(VCPKG_TARGET_IS_ANDROID)
+        z_vcpkg_determine_autotools_target_cpu(BUILD_ARCH)
+        set(arg_BUILD_TRIPLET "--build=${BUILD_ARCH}-none-linux-android")
+        string(APPEND arg_BUILD_TRIPLET " --host=x86_64-pc-linux-gnu32") # (Host activates crosscompilation; The name given here is just the prefix of the host tools for the target)
+        string(REPLACE "-static-libstdc++" "" VCPKG_DETECTED_CMAKE_CXX_STANDARD_LIBRARIES "${VCPKG_DETECTED_CMAKE_CXX_STANDARD_LIBRARIES}")
+    endif()
+
     # macOS - cross-compiling support
     if(VCPKG_TARGET_IS_OSX)
         if (requires_autoconfig AND NOT arg_BUILD_TRIPLET OR arg_DETERMINE_BUILD_TRIPLET)
