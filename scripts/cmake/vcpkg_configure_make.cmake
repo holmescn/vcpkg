@@ -178,9 +178,11 @@ function(vcpkg_configure_make)
 
     # Backup environment variables
     # CCAS CC C CPP CXX FC FF GC LD LF LIBTOOL OBJC OBJCXX R UPC Y 
+	set(cm_TOOLS AR LINKER NM RANLIB READELF STRIP OBJDUMP)
     set(cm_FLAGS AS CCAS CC C CPP CXX FC FF GC LD LF LIBTOOL OBJC OBJXX R UPC Y RC)
     list(TRANSFORM cm_FLAGS APPEND "FLAGS")
     vcpkg_backup_env_variables(VARS ${cm_FLAGS})
+	vcpkg_backup_env_variables(VARS ${cm_TOOLS} CC CXX)
 
 
     # FC fotran compiler | FF Fortran 77 compiler 
@@ -379,10 +381,29 @@ function(vcpkg_configure_make)
 
     # Android - cross-compiling support
     if(VCPKG_TARGET_IS_ANDROID)
-        z_vcpkg_determine_autotools_target_cpu(BUILD_ARCH)
-        set(arg_BUILD_TRIPLET "--build=${BUILD_ARCH}-none-linux-android")
-        string(APPEND arg_BUILD_TRIPLET " --host=x86_64-pc-linux-gnu32") # (Host activates crosscompilation; The name given here is just the prefix of the host tools for the target)
+		# Fix compile error
         string(REPLACE "-static-libstdc++" "" VCPKG_DETECTED_CMAKE_CXX_STANDARD_LIBRARIES "${VCPKG_DETECTED_CMAKE_CXX_STANDARD_LIBRARIES}")
+
+		set(BUILD_ARCH ${VCPKG_DETECTED_CMAKE_SYSTEM_PROCESSOR})
+		set(API_LEVEL $ENV{ANDROID_NATIVE_API_LEVEL})
+		if(BUILD_ARCH STREQUAL "armv7-a")
+			set(arg_BUILD_TRIPLET "--build=armv7a-none-linux-android")
+			set(CMAKE_C_FLAGS   "--target=armv7a-linux-androideabi${API_LEVEL} ${CMAKE_C_FLAGS}")
+			set(CMAKE_CXX_FLAGS "--target=armv7a-linux-androideabi${API_LEVEL} ${CMAKE_CXX_FLAGS}")
+		else()
+        	set(arg_BUILD_TRIPLET "--build=${BUILD_ARCH}-none-linux-android")
+			set(CMAKE_C_FLAGS   "--target=${BUILD_ARCH}-linux-android${API_LEVEL} ${CMAKE_C_FLAGS}")
+			set(CMAKE_CXX_FLAGS "--target=${BUILD_ARCH}-linux-android${API_LEVEL} ${CMAKE_CXX_FLAGS}")
+		endif()
+        string(APPEND arg_BUILD_TRIPLET " --host=x86_64-pc-linux-gnu32") # (Host activates crosscompilation; The name given here is just the prefix of the host tools for the target)
+
+		# export 
+		string(REPLACE "-ar" "-readelf" VCPKG_DETECTED_CMAKE_READELF "${VCPKG_DETECTED_CMAKE_AR}")
+		foreach(_var ${cm_TOOLS})
+			set(ENV{${_var}} ${VCPKG_DETECTED_CMAKE_${_var}})
+		endforeach()
+		set(ENV{CC} ${VCPKG_DETECTED_CMAKE_C_COMPILER})
+		set(ENV{CXX} ${VCPKG_DETECTED_CMAKE_CXX_COMPILER})
     endif()
 
     # macOS - cross-compiling support
@@ -711,7 +732,7 @@ function(vcpkg_configure_make)
         # https://www.gnu.org/software/libtool/manual/html_node/Link-mode.html
         # -avoid-version is handled specially by libtool link mode, this flag is not forwarded to linker,
         # and libtool tries to avoid versioning for shared libraries and no symbolic links are created.
-        if(VCPKG_TARGET_IS_ANDROID)
+		if(VCPKG_TARGET_IS_ANDROID AND VCPKG_DETECTED_CMAKE_CXX_COMPILER_ID STREQUAL "GCC")
             set(ENV{LDFLAGS} "-avoid-version $ENV{LDFLAGS}")
         endif()
 
@@ -786,6 +807,7 @@ function(vcpkg_configure_make)
 
     # Restore environment
     vcpkg_restore_env_variables(VARS ${cm_FLAGS} LIB LIBPATH LIBRARY_PATH LD_LIBRARY_PATH)
+	vcpkg_restore_env_variables(VARS ${cm_TOOLS} CC CXX)
 
     set(_VCPKG_PROJECT_SOURCE_PATH ${arg_SOURCE_PATH} PARENT_SCOPE)
     set(_VCPKG_PROJECT_SUBPATH ${arg_PROJECT_SUBPATH} PARENT_SCOPE)
