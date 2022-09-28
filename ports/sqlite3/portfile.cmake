@@ -1,4 +1,5 @@
-# Be sure to update both of these versions together.
+# Be s:wqa
+ure to update both of these versions together.
 set(SQLITE_VERSION 3390200)
 set(PKGCONFIG_VERSION 3.39.2)
 set(SQLITE_HASH a8fb7903cdc985d17b421035d6affe16795382085d7eb70428bdbbb4abc7ea6674aa251d4e532b531733c195e8867bfbd3c5556824c76cf321f8bc617bad6a32)
